@@ -1,2 +1,2 @@
-# recipe-app-api-v2
-The recipe app api without docker
+# recipe-app-api
+recipe-app-api udemy tutorial django rest
