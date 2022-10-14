@@ -1,5 +1,7 @@
+from dataclasses import fields
+from pyexpat import model
 from rest_framework import serializers
-from core.models import Recipe,User,Tag,Ingredient
+from core.models import Recipe,User,Tag,Ingredient,LikeRecipe,RecipeComment
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -7,6 +9,13 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email','name']
+
+
+class RecipeCommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RecipeComment
+        fields = ['user','comment']
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -27,11 +36,15 @@ class RecipeSerializers(serializers.ModelSerializer):
 
     user = UserSerializer( required = False )
     tags = TagSerializer( many = True , required = False )
+    like_count = serializers.SerializerMethodField('get_likes_count')
 
+
+    def get_likes_count(self, obj:Recipe) -> int:
+        return LikeRecipe.objects.filter(recipe = obj).count()
     class Meta:
         model = Recipe
         fields = [
-            'id', 'title', 'time_minutes', 'price', 'link','user','tags']
+            'id', 'title', 'time_minutes', 'price', 'link','user','tags','like_count']
         read_only_fields = ['id']
 
     def _get_or_create_tags(self,tags,recipe):
@@ -73,14 +86,18 @@ class RecipeSerializers(serializers.ModelSerializer):
             instance.ingredients.clear()
             self._get_or_create_ingredients(ingredients, instance)
 
-        # for attr, value in validated_data.items():
-        #     setattr(instance, attr, value)
-
-        # instance.save()
-        # return instance
         return super().update(instance , validated_data)
 
 class RecipeDetailSerializer(RecipeSerializers):
 
     class Meta(RecipeSerializers.Meta):
-        fields = RecipeSerializers.Meta.fields + ['descrip0tion']
+        fields = RecipeSerializers.Meta.fields + ['descrip0tion','image']
+
+
+class RecipeImageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = ["id","image"]
+        read_only_fields = ['id']
+        extra_kwargs = {'image':{'required':'True'}}
